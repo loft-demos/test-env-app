@@ -39,11 +39,11 @@ spec:
             apps:
               - name: guestbook-dev
                 sources:
-                  - repoURL: '{REPLACE_GIT_BASE_URL}/{REPLACE_ORG_NAME}/{REPLACE_REPO_NAME}'
+                  - repoURL: 'https://github.com/loft-demos/test-env-app'
                     kustomize:
                       images:
-                        - repoURL: '{REPLACE_APP_IMAGE_REPOSITORY}'
-                          tag: '${{ imageFrom("{REPLACE_APP_IMAGE_REPOSITORY}").Tag }}'
+                        - repoURL: 'ghcr.io/loft-demos/test-env-app'
+                          tag: '${{ imageFrom("ghcr.io/loft-demos/test-env-app").Tag }}'
 ---
 # staging: promotes from dev, runs health-check verification before prod is eligible
 apiVersion: kargo.akuity.io/v1alpha1
@@ -66,7 +66,7 @@ spec:
       - name: guestbook-health
     args:
       - name: app-url
-        value: "https://guestbook-staging-{REPLACE_VCLUSTER_NAME}.{REPLACE_BASE_DOMAIN}"
+        value: "https://guestbook-staging-test-env.us.demo.dev"
   promotionTemplate:
     spec:
       steps:
@@ -75,11 +75,11 @@ spec:
             apps:
               - name: guestbook-staging
                 sources:
-                  - repoURL: '{REPLACE_GIT_BASE_URL}/{REPLACE_ORG_NAME}/{REPLACE_REPO_NAME}'
+                  - repoURL: 'https://github.com/loft-demos/test-env-app'
                     kustomize:
                       images:
-                        - repoURL: '{REPLACE_APP_IMAGE_REPOSITORY}'
-                          tag: '${{ imageFrom("{REPLACE_APP_IMAGE_REPOSITORY}").Tag }}'
+                        - repoURL: 'ghcr.io/loft-demos/test-env-app'
+                          tag: '${{ imageFrom("ghcr.io/loft-demos/test-env-app").Tag }}'
 ---
 # prod: requires manual approval in the Kargo UI; only eligible after staging verification passes
 apiVersion: kargo.akuity.io/v1alpha1
@@ -105,8 +105,8 @@ spec:
             apps:
               - name: guestbook-prod
                 sources:
-                  - repoURL: '{REPLACE_GIT_BASE_URL}/{REPLACE_ORG_NAME}/{REPLACE_REPO_NAME}'
+                  - repoURL: 'https://github.com/loft-demos/test-env-app'
                     kustomize:
                       images:
-                        - repoURL: '{REPLACE_APP_IMAGE_REPOSITORY}'
-                          tag: '${{ imageFrom("{REPLACE_APP_IMAGE_REPOSITORY}").Tag }}'
+                        - repoURL: 'ghcr.io/loft-demos/test-env-app'
+                          tag: '${{ imageFrom("ghcr.io/loft-demos/test-env-app").Tag }}'

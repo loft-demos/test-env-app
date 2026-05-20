@@ -9,8 +9,8 @@ spec:
   project: default
   source:
     path: vcluster-gitops/overlays/local-contained
-    repoURL: '{REPLACE_GIT_BASE_URL}/{REPLACE_ORG_NAME}/{REPLACE_REPO_NAME}.git'
-    targetRevision: '{REPLACE_GIT_TARGET_REVISION}'
+    repoURL: 'https://github.com/loft-demos/test-env-app.git'
+    targetRevision: 'main'
   syncPolicy:
     automated:
       prune: true

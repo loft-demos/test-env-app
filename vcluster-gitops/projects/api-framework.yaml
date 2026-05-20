@@ -60,7 +60,7 @@ spec:
   argoCD:
     namespace: argocd
     sso:
-      host: https://argocd-{REPLACE_VCLUSTER_NAME}.{REPLACE_BASE_DOMAIN}
+      host: https://argocd-test-env.us.demo.dev
       assignedRoles:
         - role:admin
   namespacePattern:

@@ -23,19 +23,19 @@ spec:
             env: prod
   template:
     metadata:
-      name: {REPLACE_REPO_NAME}-{{.name}}
+      name: test-env-app-{{.name}}
     spec:
       destination:
-        namespace: {REPLACE_REPO_NAME}-{{.metadata.labels.env}}
+        namespace: test-env-app-{{.metadata.labels.env}}
         name: '{{.name}}'
       info:
         - name: Git Repo
-          value: '{REPLACE_GIT_PUBLIC_URL}/{REPLACE_ORG_NAME}/{REPLACE_REPO_NAME}/'
+          value: 'https://github.com/loft-demos/test-env-app/'
       project: 'loft-{{ index .metadata.labels "demos.vcluster.com/project" }}'
       source:
         path: vcluster-use-cases/argocd-vcluster-add-ons/manifests/{{.metadata.labels.env}}/
-        repoURL: '{REPLACE_GIT_BASE_URL}/{REPLACE_ORG_NAME}/{REPLACE_REPO_NAME}.git'
-        targetRevision: '{REPLACE_GIT_TARGET_REVISION}'
+        repoURL: 'https://github.com/loft-demos/test-env-app.git'
+        targetRevision: 'main'
       syncPolicy:
         automated:
           selfHeal: true

@@ -26,13 +26,13 @@ spec:
             enabled: true
             className: nginx
             hosts:
-              - host: flux-{REPLACE_VCLUSTER_NAME}.{REPLACE_BASE_DOMAIN}
+              - host: flux-test-env.us.demo.dev
                 paths:
                   - path: /
                     pathType: Prefix
             tls:
               - hosts:
-                  - flux-{REPLACE_VCLUSTER_NAME}.{REPLACE_BASE_DOMAIN}
+                  - flux-test-env.us.demo.dev
   syncPolicy:
     automated:
       prune: true

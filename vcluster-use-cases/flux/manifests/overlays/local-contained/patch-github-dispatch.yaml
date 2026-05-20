@@ -4,4 +4,4 @@ metadata:
   name: github-dispatch
   namespace: p-auth-core
 spec:
-  address: '{REPLACE_GIT_BASE_URL}/{REPLACE_ORG_NAME}/{REPLACE_REPO_NAME}'
+  address: 'https://github.com/loft-demos/test-env-app'

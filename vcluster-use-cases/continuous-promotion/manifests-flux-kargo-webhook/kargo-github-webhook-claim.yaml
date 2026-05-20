@@ -5,4 +5,4 @@ metadata:
   namespace: p-vcluster-flux-demo
 spec:
   clusterConfigName: cluster
-  repoName: '{REPLACE_REPO_NAME}'
+  repoName: 'test-env-app'

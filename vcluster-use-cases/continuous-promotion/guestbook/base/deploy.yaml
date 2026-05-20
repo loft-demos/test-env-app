@@ -15,7 +15,7 @@ spec:
       containers:
         - name: guestbook
           # Kargo updates this image tag via argocd-update image override when promoting
-          image: '{REPLACE_APP_IMAGE_REPOSITORY}'
+          image: 'ghcr.io/loft-demos/test-env-app'
           env:
             - name: DEMO_IMAGE
               value: ""

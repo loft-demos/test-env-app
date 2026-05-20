@@ -35,9 +35,9 @@ spec:
       - name: integration-test
     args:
       - name: app-url
-        value: "https://guestbook-ppg-pre-prod-{REPLACE_VCLUSTER_NAME}.{REPLACE_BASE_DOMAIN}"
+        value: "https://guestbook-ppg-pre-prod-test-env.us.demo.dev"
       - name: image-tag
-        value: '${{ imageFrom("{REPLACE_APP_IMAGE_REPOSITORY}").Tag }}'
+        value: '${{ imageFrom("ghcr.io/loft-demos/test-env-app").Tag }}'
   promotionTemplate:
     spec:
       steps:
@@ -46,11 +46,11 @@ spec:
             apps:
               - name: guestbook-ppg-pre-prod
                 sources:
-                  - repoURL: '{REPLACE_GIT_BASE_URL}/{REPLACE_ORG_NAME}/{REPLACE_REPO_NAME}'
+                  - repoURL: 'https://github.com/loft-demos/test-env-app'
                     kustomize:
                       images:
-                        - repoURL: '{REPLACE_APP_IMAGE_REPOSITORY}'
-                          tag: '${{ imageFrom("{REPLACE_APP_IMAGE_REPOSITORY}").Tag }}'
+                        - repoURL: 'ghcr.io/loft-demos/test-env-app'
+                          tag: '${{ imageFrom("ghcr.io/loft-demos/test-env-app").Tag }}'
 ---
 # prod: requires manual approval in Kargo UI; only eligible after pre-prod tests pass.
 # Soak time ensures freight has been running in pre-prod for at least 3 minute.
@@ -78,8 +78,8 @@ spec:
             apps:
               - name: guestbook-ppg-prod
                 sources:
-                  - repoURL: '{REPLACE_GIT_BASE_URL}/{REPLACE_ORG_NAME}/{REPLACE_REPO_NAME}'
+                  - repoURL: 'https://github.com/loft-demos/test-env-app'
                     kustomize:
                       images:
-                        - repoURL: '{REPLACE_APP_IMAGE_REPOSITORY}'
-                          tag: '${{ imageFrom("{REPLACE_APP_IMAGE_REPOSITORY}").Tag }}'
+                        - repoURL: 'ghcr.io/loft-demos/test-env-app'
+                          tag: '${{ imageFrom("ghcr.io/loft-demos/test-env-app").Tag }}'

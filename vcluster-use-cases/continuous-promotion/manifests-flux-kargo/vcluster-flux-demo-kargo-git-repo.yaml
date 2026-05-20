@@ -7,6 +7,6 @@ metadata:
     argocd.argoproj.io/sync-wave: "3"
 spec:
   interval: 5m0s
-  url: '{REPLACE_GIT_BASE_URL}/{REPLACE_ORG_NAME}/{REPLACE_REPO_NAME}.git'
+  url: 'https://github.com/loft-demos/test-env-app.git'
   ref:
-    branch: '{REPLACE_GIT_TARGET_REVISION}'
+    branch: 'main'

@@ -10,4 +10,4 @@ stringData:
   name: Kargo
   clientID: kargo
   clientSecret: "{REPLACE_KARGO_OIDC_SECRET}"
-  redirectURIs: "https://{REPLACE_KARGO_HOST}/dex/callback"
+  redirectURIs: "https://kargo-test-env.us.demo.dev/dex/callback"

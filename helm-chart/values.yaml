@@ -4,7 +4,7 @@
 
 replicaCount: 1
 image:
-  repository: {REPLACE_APP_IMAGE_REPOSITORY}
+  repository: ghcr.io/loft-demos/test-env-app
   pullPolicy: IfNotPresent
   # use Chart appVersion if not set as value
   tag: ""

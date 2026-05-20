@@ -6,7 +6,7 @@ metadata:
     argocd.argoproj.io/sync-wave: "10"
 spec:
   forProvider:
-    repository: {REPLACE_REPO_NAME}
+    repository: test-env-app
     active: true
     configuration:
       - contentType: json

@@ -27,12 +27,12 @@ spec:
       retries: 3
   values:
     api:
-      host: {REPLACE_KARGO_HOST}
+      host: kargo-test-env.us.demo.dev
       # Keep auth config out of Git. The referenced Secret is responsible for
       # setting api.adminAccount and/or api.oidc values.
       argocd:
         urls:
-          "": "https://{REPLACE_ARGOCD_HOST}"
+          "": "https://argocd-test-env.us.demo.dev"
       tls:
         enabled: false
         terminatedUpstream: true
@@ -45,7 +45,7 @@ spec:
         tls:
           enabled: false
     externalWebhooksServer:
-      host: {REPLACE_KARGO_WEBHOOK_HOST}
+      host: kargo-webhooks-test-env.us.demo.dev
       logLevel: DEBUG
       tls:
         enabled: false

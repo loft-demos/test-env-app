@@ -22,8 +22,8 @@ spec:
         namespace: argocd
       project: default
       source:
-        repoURL: '{REPLACE_GIT_BASE_URL}/{REPLACE_ORG_NAME}/{REPLACE_REPO_NAME}'
-        targetRevision: '{REPLACE_GIT_TARGET_REVISION}'
+        repoURL: 'https://github.com/loft-demos/test-env-app'
+        targetRevision: 'main'
         path: vcluster-use-cases/namespace-sync/apps
       syncPolicy:
         automated:

@@ -8,7 +8,7 @@ metadata:
 spec:
   subscriptions:
     - image:
-        repoURL: '{REPLACE_APP_IMAGE_REPOSITORY}'
+        repoURL: 'ghcr.io/loft-demos/test-env-app'
         semverConstraint: ">=0.0.1"
         discoveryLimit: 5
         insecureSkipTLSVerify: true
