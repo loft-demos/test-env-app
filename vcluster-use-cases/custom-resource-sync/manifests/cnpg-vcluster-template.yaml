@@ -1,0 +1,61 @@
+kind: VirtualClusterTemplate
+apiVersion: management.loft.sh/v1
+metadata:
+  name: cnpg-custom-resource-sync-template
+spec:
+  displayName: CloudNative PG Template
+  template:
+    metadata:
+      labels:
+        loft.sh/import-argocd: 'true'
+    objects: {}
+    access:
+      rules:
+        - teams:
+            - loft-admins
+          clusterRole: cluster-admin
+    pro:
+      enabled: true
+    helmRelease:
+      chart:
+        version: 0.34.0
+      values: |-
+        sleep:
+          auto:
+            afterInactivity: 3h
+        deletion:
+          auto:
+            afterInactivity: 33h20m
+        sync:
+          toHost:
+            ingresses:
+              enabled: true
+            customResources:
+              clusters.postgresql.cnpg.io:
+                enabled: true
+
+        controlPlane:
+          # Use an embedded managed etcd server instead of using the k3s default SQLite backend
+          backingStore:
+            etcd:
+              embedded:
+                enabled: true
+          coredns:
+            embedded: true
+        policies:
+          limitRange:
+            enabled: true
+          podSecurityStandard: baseline
+          resourceQuota:
+            enabled: true
+    accessPoint:
+      ingress: {}
+    spaceTemplate:
+      metadata: {}
+  access:
+    - verbs:
+        - '*'
+      subresources:
+        - '*'
+      users:
+        - admin

@@ -1,0 +1,39 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../argocd-in-vcluster-appset.yaml
+  - ../../argocd-vcluster-add-ons-app.yaml
+  - ../../argocd-vcluster-pull-request-environments-apps.yaml
+  - ../../vcluster-sleep-wakeup-app.yaml
+  - ../../autosnapshots-appset.yaml
+  - ../../cnpg-appset.yaml
+  - ../../connected-host-cluster-appset.yaml
+  - ../../crossplane-appset.yaml
+  - ../../eso-appset.yaml
+  - ../../flux-appset.yaml
+  - ../../flux-operator-helm-app.yaml
+  - ../../global-project.yaml
+  - ../../kyverno-appset.yaml
+  - ../../database-connector-appset.yaml
+  - ../../namespace-sync-appset.yaml
+  - ../../auto-nodes-aws-appset.yaml
+  - ../../private-nodes-appset.yaml
+  - ../../custom-resource-sync-appset.yaml
+  - ../../rancher-appset.yaml
+  - repo-app-pr-appset.yaml
+  - ../../resolve-dns-appset.yaml
+  - ../../tenant-observability-appset.yaml
+  - ../../virtual-cluster-templates-app.yaml
+  - ../../virtual-scheduler-appset.yaml
+  - ../../continuous-promotion-appset.yaml
+  - ../../continuous-promotion-flux-kargo-appset.yaml
+  - ../../continuous-promotion-kargo-webhook-appset.yaml
+  - ../../continuous-promotion-legacy-argo-kargo-appset.yaml
+  - ../../vnode-with-vcluster-appset.yaml
+patches:
+  - path: patch-autosnapshots-appset.yaml
+  - path: patch-continuous-promotion-flux-kargo-appset.yaml
+  - path: patch-pr-apps-bootstrap.yaml
+  - path: patch-vcluster-sleep-wakeup-app.yaml
+  - path: patch-flux-appset.yaml
+  - path: patch-flux-operator-helm-app.yaml

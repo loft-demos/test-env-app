@@ -1,0 +1,47 @@
+# vCluster Platform Helm chart values template.
+# Placeholders rendered by install-vind.sh before helm install:
+# - __VCP_LICENSE_TOKEN__
+# - __VCP_LOFT_HOST__
+# - __FORGEJO_HOST__
+# - __VCLUSTER_NAME__
+# - <KARGO_NAV_BUTTON>  (optional nav button entry, rendered conditionally)
+#
+# OIDC clients are NOT configured here. They are deployed as Kubernetes Secrets
+# in the vcluster-platform namespace (see continuous-promotion/manifests/vcp-oidc-clients/)
+# so that client secrets are managed independently of the platform Helm release.
+env:
+  LICENSE_TOKEN: __VCP_LICENSE_TOKEN__
+service:
+  type: LoadBalancer
+ingress:
+  enabled: false
+config:
+  loftHost: __VCP_LOFT_HOST__
+  costControl:
+    enabled: false
+  imageBuilder:
+    enabled: false
+  oidc:
+    enabled: true
+  uiSettings:
+    externalURLs:
+      allow:
+        - vcluster
+        - featurebase
+    navBarButtons:
+      - link: "http://__FORGEJO_HOST__/"
+        icon: "http://__FORGEJO_HOST__/assets/img/logo.svg"
+        text: "Forgejo"
+        position: TopEnd
+      - link: "https://flux-__VCLUSTER_NAME__.__VCP_LOFT_HOST__/"
+        icon: "https://flux-__VCLUSTER_NAME__.__VCP_LOFT_HOST__/favicon.svg"
+        text: "Flux UI"
+        position: TopEnd
+      - link: "https://argocd.__VCP_LOFT_HOST__/"
+        icon: "https://argocd.__VCP_LOFT_HOST__/assets/favicon/favicon-32x32.png"
+        text: "Argo CD"
+        position: TopEnd
+      __KARGO_NAV_BUTTON__
+      - link: "https://www.vcluster.com/docs/platform/"
+        text: "vCluster Docs"
+        position: TopEnd

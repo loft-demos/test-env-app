@@ -1,0 +1,94 @@
+apiVersion: management.loft.sh/v1
+kind: VirtualClusterInstance
+metadata:
+  name: vcluster-a
+  namespace: p-alpha
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  displayName: vcluster-a
+  owner:
+    team: loft-admins
+  template:
+    metadata: {}
+    instanceTemplate:
+      metadata: {}
+    objects: |-
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: svc-a
+      ---
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: nginx-sa
+        namespace: svc-a
+      ---
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: nginx-a
+        namespace: svc-a
+      spec:
+        type: ClusterIP
+        selector:
+          app: nginx-a
+        ports:
+          - port: 80         
+            targetPort: 80
+      ---
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: nginx-a
+        namespace: svc-a
+      spec:
+        selector:
+          matchLabels:
+            app: nginx-a
+        template:
+          metadata:
+            labels:
+              app: nginx-a
+          spec:
+            serviceAccountName: nginx-sa
+            containers:
+              - name: nginx-a
+                image: nginx
+    pro: {}
+    helmRelease:
+      chart:
+        name: vcluster
+        version: 0.32.1
+      values: |
+        sync:
+          toHost:
+            ingresses:
+              enabled: true
+        controlPlane:
+          backingStore:
+            etcd:
+              embedded:
+                enabled: true
+          coredns:
+            enabled: true
+            embedded: true
+        sleep:
+          auto:
+            afterInactivity: 9h40m
+            wakeup:
+              schedule: 30 7 * * 1-5
+            schedule: 0 19 * * 1-5
+        deletion:
+          auto:
+            afterInactivity: 500h
+    accessPoint:
+      ingress: {}
+    spaceTemplate:
+      metadata: {}
+  clusterRef:
+    cluster: loft-cluster
+    namespace: alpha-v-vcluster-a
+    virtualCluster: vcluster-a
+  networkPeer: true

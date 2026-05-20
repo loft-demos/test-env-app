@@ -1,0 +1,97 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kargo-operator
+  namespace: argocd
+  labels:
+    use-case.demos.vcluster.com: continuous-promotion
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kargo
+  project: default
+  source:
+    chart: kargo
+    repoURL: ghcr.io/akuity/kargo-charts
+    targetRevision: 1.9.5
+    helm:
+      values: |
+        api:
+          host: {REPLACE_KARGO_HOST}
+
+          adminAccount:
+            enabled: true
+            passwordHash: '{REPLACE_KARGO_ADMIN_PASSWORD_HASH}'
+            tokenSigningKey: '{REPLACE_KARGO_TOKEN_SIGNING_KEY}'
+
+          argocd:
+            urls:
+              "": "https://{REPLACE_ARGOCD_HOST}"
+
+          oidc:
+            enabled: true
+            issuerURL: "https://{REPLACE_KARGO_HOST}/dex"
+            clientID: "kargo"
+            additionalScopes:
+              - email
+              - profile
+              - groups
+            dex:
+              enabled: true
+              tls:
+                selfSignedCert: true
+                certSecretName: kargo-dex-tls
+              connectors:
+                - type: oidc
+                  id: vcp
+                  name: vCluster Platform
+                  config:
+                    issuer: "https://{REPLACE_BASE_DOMAIN}/oidc"
+                    clientID: "kargo"
+                    clientSecret: "{REPLACE_KARGO_OIDC_SECRET}"
+                    insecureSkipVerify: true
+                    redirectURI: "https://{REPLACE_KARGO_HOST}/dex/callback"
+
+          tls:
+            enabled: false
+            terminatedUpstream: true
+
+          ingress:
+            enabled: true
+            ingressClassName: nginx
+            annotations:
+              nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+              nginx.ingress.kubernetes.io/ssl-redirect: "true"
+            tls:
+              enabled: false
+
+        externalWebhooksServer:
+          host: {REPLACE_KARGO_WEBHOOK_HOST}
+          tls:
+            enabled: false
+            terminatedUpstream: true
+          ingress:
+            enabled: true
+            ingressClassName: nginx
+            annotations:
+              nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+              nginx.ingress.kubernetes.io/ssl-redirect: "true"
+            tls:
+              enabled: false
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - Replace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 20s
+        factor: 2
+        maxDuration: 3m

@@ -1,0 +1,60 @@
+# Argo CD Applications for the pre-prod-gate pipeline.
+# Kargo updates the image tag on these Applications via argocd-update promotion steps.
+#
+# guestbook-ppg-pre-prod: targets the pre-prod-gate-pre-prod vCluster
+# guestbook-ppg-prod:     targets production (update destination to a real prod cluster)
+#
+# Sync wave 3 ensures VCIs (wave 2) are registered with Argo CD before these Apps are created.
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: guestbook-ppg-pre-prod
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+    kargo.akuity.io/authorized-stage: pre-prod-gate:pre-prod
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: '{REPLACE_GIT_BASE_URL}/{REPLACE_ORG_NAME}/{REPLACE_REPO_NAME}'
+    targetRevision: '{REPLACE_GIT_TARGET_REVISION}'
+    path: vcluster-use-cases/continuous-promotion/guestbook/stages/pre-prod-gate-pre-prod
+  destination:
+    name: loft-default-vcluster-pre-prod-gate-pre-prod
+    namespace: guestbook
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+# TODO: Update destination to point at a real production cluster
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: guestbook-ppg-prod
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+    kargo.akuity.io/authorized-stage: pre-prod-gate:prod
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: '{REPLACE_GIT_BASE_URL}/{REPLACE_ORG_NAME}/{REPLACE_REPO_NAME}'
+    targetRevision: '{REPLACE_GIT_TARGET_REVISION}'
+    path: vcluster-use-cases/continuous-promotion/guestbook/stages/pre-prod-gate-prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: guestbook
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

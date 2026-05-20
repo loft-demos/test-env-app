@@ -1,0 +1,4 @@
+# Browser-facing ingress resources are intentionally empty for now.
+# vCP, Argo CD, and Forgejo use dedicated LoadBalancer paths in the local
+# self-contained vind flow. ingress-nginx remains the wildcard edge for
+# application hosts such as *.vcp.local.

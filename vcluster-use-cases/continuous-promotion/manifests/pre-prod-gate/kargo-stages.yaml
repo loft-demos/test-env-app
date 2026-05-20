@@ -1,0 +1,85 @@
+# ProjectConfig enables auto-promotion for the pre-prod Stage.
+# prod still requires manual promotion in the Kargo UI.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: pre-prod-gate
+  namespace: pre-prod-gate
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  promotionPolicies:
+    - stageSelector:
+        name: pre-prod
+      autoPromotionEnabled: true
+---
+# pre-prod: auto-promotes directly from the Warehouse into the long-lived pre-prod vCluster.
+# The vCluster scales to zero when idle and wakes automatically when Kargo promotes.
+# Integration tests run here — freight only proceeds to prod on pass.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: pre-prod
+  namespace: pre-prod-gate
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  requestedFreight:
+    - origin:
+        kind: Warehouse
+        name: guestbook
+      sources:
+        direct: true
+  verification:
+    analysisTemplates:
+      - name: integration-test
+    args:
+      - name: app-url
+        value: "https://guestbook-ppg-pre-prod-{REPLACE_VCLUSTER_NAME}.{REPLACE_BASE_DOMAIN}"
+      - name: image-tag
+        value: '${{ imageFrom("{REPLACE_APP_IMAGE_REPOSITORY}").Tag }}'
+  promotionTemplate:
+    spec:
+      steps:
+        - uses: argocd-update
+          config:
+            apps:
+              - name: guestbook-ppg-pre-prod
+                sources:
+                  - repoURL: '{REPLACE_GIT_BASE_URL}/{REPLACE_ORG_NAME}/{REPLACE_REPO_NAME}'
+                    kustomize:
+                      images:
+                        - repoURL: '{REPLACE_APP_IMAGE_REPOSITORY}'
+                          tag: '${{ imageFrom("{REPLACE_APP_IMAGE_REPOSITORY}").Tag }}'
+---
+# prod: requires manual approval in Kargo UI; only eligible after pre-prod tests pass.
+# Soak time ensures freight has been running in pre-prod for at least 3 minute.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: prod
+  namespace: pre-prod-gate
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  requestedFreight:
+    - origin:
+        kind: Warehouse
+        name: guestbook
+      sources:
+        stages:
+          - pre-prod
+        requiredSoakTime: 3m
+  promotionTemplate:
+    spec:
+      steps:
+        - uses: argocd-update
+          config:
+            apps:
+              - name: guestbook-ppg-prod
+                sources:
+                  - repoURL: '{REPLACE_GIT_BASE_URL}/{REPLACE_ORG_NAME}/{REPLACE_REPO_NAME}'
+                    kustomize:
+                      images:
+                        - repoURL: '{REPLACE_APP_IMAGE_REPOSITORY}'
+                          tag: '${{ imageFrom("{REPLACE_APP_IMAGE_REPOSITORY}").Tag }}'

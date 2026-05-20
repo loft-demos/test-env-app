@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-notifications-cm
+  namespace: argocd
+data:
+  context: |
+    argocdUrl: https://argocd-{REPLACE_VCLUSTER_NAME}.{REPLACE_BASE_DOMAIN}
+  service.github: |
+    appID: $githubAppID
+    installationID: $githubAppInstallationID
+    privateKey: $githubAppPrivateKey
+  template.app-deployed: |
+    message: |
+      Application {{.app.metadata.name}} is now running new version of deployments manifests.
+    github:
+      repoURLPath: "{REPLACE_GIT_PUBLIC_URL}/{REPLACE_ORG_NAME}/{REPLACE_REPO_NAME}"
+      revisionPath: "{{.app.spec.source.targetRevision}}"
+      pullRequestComment:
+        content: |
+          {{- $labels := .app.metadata.labels | default dict -}}
+          {{- $shortSha := get $labels "shortSha" | default "unknown-commit" -}}
+          {{- $projectId := get $labels "vclusterProjectId" | default "unknown-project" -}}
+          {{- $vclusterName := get $labels "vclusterName" | default "unknown-vcluster" -}}
+          {{- $k8sVersion := get $labels "k8sVersion" | default "unknown-k8s-version" -}}
+
+          commit {{$shortSha}}
+          **Kubernetes Version:** {{$k8sVersion}}
+          **vCluster:** pull request [vCluster pods](https://{REPLACE_VCLUSTER_NAME}.{REPLACE_BASE_DOMAIN}/projects/{{$projectId}}/vclusters/{{$vclusterName}}/pods)  
+          **Argo CD:** pull request [Argo CD PR deployment Application]({{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true)  
+          **Deployed App:** application for this pull request has been deployed at: [{{.app.metadata.name}}](https://{{$vclusterName}}.{REPLACE_BASE_DOMAIN}/)
+  trigger.on-deployed: |
+    - description: Application is synced and healthy. Triggered once per commit.
+      oncePer: app.status.operationState?.syncResult?.revision
+      send:
+      - app-deployed
+      when: app.status.operationState != nil
+        and app.status.operationState.phase == 'Succeeded'
+        and app.status.health.status == 'Healthy'

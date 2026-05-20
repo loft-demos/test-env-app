@@ -1,0 +1,92 @@
+kind: VirtualClusterTemplate
+apiVersion: management.loft.sh/v1
+metadata:
+  name: tenant-observability-vcluster
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    loft.sh/hpm-enabled: "true"
+    vcluster.com/template-icon: vcluster-box.svg
+spec:
+  displayName: Tenant Observability vCluster Template
+  description: This template imports the vCluster into the host Argo CD instance and labels it for tenant-observability stack installation through an ApplicationSet.
+  owner:
+    team: loft-admins
+  template:
+    metadata: {}
+    instanceTemplate:
+      metadata: {}
+    pro:
+      enabled: true
+    helmRelease:
+      chart:
+        version: 0.32.1
+      values: |-
+        sync:
+          toHost:
+            ingresses:
+              enabled: true
+        controlPlane:
+          backingStore:
+            etcd:
+              embedded:
+                enabled: true
+          coredns:
+            embedded: true
+          hostPathMapper:
+            enabled: true
+            central: true
+    accessPoint:
+      ingress: {}
+    spaceTemplate:
+      metadata: {}
+  versions:
+    - version: 1.0.0
+      template:
+        metadata:
+          labels:
+            loft.sh/import-argocd: 'true'
+        instanceTemplate:
+          metadata:
+            annotations:
+              loft.sh/custom-links: |-
+                Grafana=https://grafana-{{ .Values.loft.virtualClusterName }}.{{ .Values.loft.clusterAnnotations.domainPrefix }}.{{ .Values.loft.clusterAnnotations.domain }}
+                Prometheus=https://prometheus-{{ .Values.loft.virtualClusterName }}.{{ .Values.loft.clusterAnnotations.domainPrefix }}.{{ .Values.loft.clusterAnnotations.domain }}
+            labels:
+              addons.vcluster.demo/tenant-observability: 'true'
+              vcluster.demo/project: '{{ .Values.loft.project }}'
+              vcluster.demo/namespace: '{{ .Values.loft.virtualClusterNamespace }}'
+              vcluster.demo/owner: '{{ or (and .Values.loft.user .Values.loft.user.name) (and .Values.loft.team .Values.loft.team.name) }}'
+              vcluster.demo/grafana-hostname: 'grafana-{{ .Values.loft.virtualClusterName }}.{{ .Values.loft.clusterAnnotations.domainPrefix }}.{{ .Values.loft.clusterAnnotations.domain }}'
+              vcluster.demo/prometheus-hostname: 'prometheus-{{ .Values.loft.virtualClusterName }}.{{ .Values.loft.clusterAnnotations.domainPrefix }}.{{ .Values.loft.clusterAnnotations.domain }}'
+              vcluster.demo/cluster-name: '{{ .Values.loft.virtualClusterName }}'
+        pro:
+          enabled: true
+        helmRelease:
+          chart:
+            version: 0.34.0
+          values: |-
+            sync:
+              toHost:
+                ingresses:
+                  enabled: true
+            controlPlane:
+              backingStore:
+                etcd:
+                  embedded:
+                    enabled: true
+              coredns:
+                embedded: true
+              hostPathMapper:
+                enabled: true
+                central: true
+        accessPoint:
+          ingress: {}
+        spaceTemplate:
+          metadata: {}
+  access:
+    - verbs:
+        - '*'
+      subresources:
+        - '*'
+      users:
+        - admin

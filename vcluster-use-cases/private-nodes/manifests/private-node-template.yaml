@@ -1,0 +1,76 @@
+apiVersion: management.loft.sh/v1
+kind: VirtualClusterTemplate
+metadata:
+  name: private-node-demo-template
+spec:
+  displayName: Private Nodes Demo Template
+  description: This template deploys a vCluster with Private Nodes enabled for a manual node join flow.
+  owner:
+    team: loft-admins
+  template:
+    metadata: {}
+    instanceTemplate:
+      metadata: {}
+    pro:
+      enabled: true
+    helmRelease:
+      chart:
+        version: 0.32.1
+      values: |-
+        controlPlane:
+          backingStore:
+            etcd:
+              embedded:
+                enabled: true
+          distro:
+            k8s:
+              image:
+                tag: v1.33.4
+        privateNodes:
+          enabled: true
+          vpn:
+            enabled: true
+            nodeToNode:
+              enabled: true
+    accessPoint:
+      ingress: {}
+    spaceTemplate:
+      metadata: {}
+  parameters:
+    - variable: kubernetesVersion
+      label: Kubernetes Version
+      description: Kubernetes distro tag for the private-node-enabled vCluster.
+      type: string
+      defaultValue: v1.33.4
+      section: Control Plane
+  versions:
+    - version: 1.0.0
+      template:
+        metadata: {}
+        instanceTemplate:
+          metadata: {}
+        pro:
+          enabled: true
+        helmRelease:
+          chart:
+            version: 0.34.0
+          values: |-
+            controlPlane:
+              backingStore:
+                etcd:
+                  embedded:
+                    enabled: true
+              distro:
+                k8s:
+                  image:
+                    tag: '{{ .Values.kubernetesVersion }}'
+            privateNodes:
+              enabled: true
+              vpn:
+                enabled: true
+                nodeToNode:
+                  enabled: true
+        accessPoint:
+          ingress: {}
+        spaceTemplate:
+          metadata: {}

@@ -1,0 +1,22 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: {REPLACE_REPO_NAME}
+  namespace: p-auth-core
+spec:
+  interval: 5m0s
+  url: '{REPLACE_GIT_BASE_URL}/{REPLACE_ORG_NAME}/{REPLACE_REPO_NAME}.git'
+  ref:
+    branch: '{REPLACE_GIT_TARGET_REVISION}'
+---
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Provider
+metadata:
+  name: github-dispatch
+  namespace: p-auth-core
+spec:
+  type: githubdispatch
+  address: '{REPLACE_GIT_PUBLIC_URL}/{REPLACE_ORG_NAME}/{REPLACE_REPO_NAME}'
+  secretRef:
+    name: loft-demo-org-cred
+---

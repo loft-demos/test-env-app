@@ -1,0 +1,19 @@
+---
+apiVersion: management.loft.sh/v1
+kind: VirtualClusterInstance
+metadata:
+  name: auto-nodes-demo
+  namespace: p-default
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  owner:
+    team: loft-admins
+  templateRef:
+    name: auto-nodes-template
+    version: 1.0.x
+  clusterRef:
+    cluster: loft-cluster
+  parameters: |
+    kubernetesVersion: v1.33.0
+    autoNodeCount: "3"

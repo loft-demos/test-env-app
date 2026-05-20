@@ -1,0 +1,66 @@
+name: build-push-default-branch
+
+on:
+  push:
+    paths:
+      - 'src/**'
+      - 'helm-chart/Chart.yaml'
+      - 'scripts/build-push-forgejo-image.sh'
+      - '.forgejo/workflows/build-push.yaml'
+
+concurrency:
+  group: build-push
+  cancel-in-progress: false
+
+jobs:
+  build-push:
+    if: ${{ github.ref_name == github.event.repository.default_branch }}
+    runs-on: ubuntu-22.04
+    env:
+      DOCKER_HOST: unix:///var/run/docker.sock
+    defaults:
+      run:
+        shell: sh
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure Docker CLI is available
+        run: |
+          if command -v docker >/dev/null 2>&1; then
+            docker --version
+            exit 0
+          fi
+
+          if ! command -v apt-get >/dev/null 2>&1; then
+            echo "ERROR: docker CLI is missing and this runner image does not provide apt-get." >&2
+            exit 1
+          fi
+
+          if [ "$(id -u)" -ne 0 ]; then
+            echo "ERROR: docker CLI is missing and this job is not running as root, so it cannot install docker.io." >&2
+            exit 1
+          fi
+
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update
+          apt-get install -y --no-install-recommends docker.io
+          docker --version
+
+      - name: Build image
+        run: |
+          bash scripts/build-push-forgejo-image.sh \
+            --registry '{REPLACE_FORGEJO_HOST}' \
+            --image-repository-prefix '{REPLACE_IMAGE_REPOSITORY_PREFIX}' \
+            --repo-name '{REPLACE_REPO_NAME}' \
+            --extra-tag latest \
+            --username "$FORGEJO_USERNAME" \
+            --password "$FORGEJO_PASSWORD" \
+            --token "$FORGEJO_TOKEN" \
+            --registry-insecure \
+            --platform "linux/$(uname -m | sed 's/aarch64/arm64/; s/x86_64/amd64/')" \
+            --source-url "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
+        env:
+          FORGEJO_USERNAME: '{REPLACE_FORGEJO_USERNAME}'
+          FORGEJO_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+          FORGEJO_PASSWORD: ${{ secrets.FORGEJO_PASSWORD }}

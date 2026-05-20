@@ -1,0 +1,14 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres-cluster
+  namespace: cnpg-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  instances: 1
+  enableSuperuserAccess: true
+  superuserSecret:
+    name: cnpg-postgres-admin
+  storage:
+    size: 5Gi

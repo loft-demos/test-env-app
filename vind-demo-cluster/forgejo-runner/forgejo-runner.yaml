@@ -1,0 +1,118 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: forgejo-runner-data
+  namespace: forgejo
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forgejo-runner
+  namespace: forgejo
+spec:
+  # This deployment represents one offline-registered Forgejo runner identity.
+  # Scale out with additional runner registrations, not by increasing replicas.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: forgejo-runner
+  template:
+    metadata:
+      labels:
+        app: forgejo-runner
+    spec:
+      initContainers:
+        - name: register
+          image: code.forgejo.org/forgejo/runner:12
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              if [ -f /data/.runner ]; then
+                echo "Runner already registered — skipping."
+                exit 0
+              fi
+              cd /data
+              forgejo-runner create-runner-file \
+                --instance http://forgejo-http.forgejo.svc.cluster.local:3000 \
+                --secret "$RUNNER_SECRET"
+          env:
+            - name: RUNNER_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: forgejo-runner-offline-registration
+                  key: secret
+                  optional: false
+          volumeMounts:
+            - name: runner-data
+              mountPath: /data
+            - name: runner-config
+              mountPath: /config
+      containers:
+        - name: runner
+          image: code.forgejo.org/forgejo/runner:12
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              until [ -S /var/run/docker.sock ]; do
+                echo "Waiting for Docker socket..."
+                sleep 1
+              done
+              exec forgejo-runner daemon --config /config/config.yaml
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+          env:
+            - name: DOCKER_HOST
+              value: unix:///var/run/docker.sock
+          volumeMounts:
+            - name: runner-data
+              mountPath: /data
+            - name: runner-config
+              mountPath: /config
+            - name: docker-sock
+              mountPath: /var/run
+            - name: registry-certs
+              mountPath: /etc/docker/certs.d
+              readOnly: true
+        - name: dind
+          image: docker:dind
+          securityContext:
+            privileged: true
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+          args:
+            - "--insecure-registry={REPLACE_FORGEJO_HOST}"
+            - "--insecure-registry=forgejo-http.forgejo.svc.cluster.local:3000"
+          volumeMounts:
+            - name: docker-sock
+              mountPath: /var/run
+            - name: runner-data
+              mountPath: /data
+            - name: registry-certs
+              mountPath: /etc/docker/certs.d
+              readOnly: true
+      volumes:
+        - name: runner-data
+          persistentVolumeClaim:
+            claimName: forgejo-runner-data
+        - name: runner-config
+          configMap:
+            name: forgejo-runner-config
+        - name: docker-sock
+          emptyDir: {}
+        - name: registry-certs
+          configMap:
+            name: forgejo-runner-registry-ca
+            optional: true
+            items:
+              - key: ca.crt
+                path: "{REPLACE_FORGEJO_HOST}/ca.crt"

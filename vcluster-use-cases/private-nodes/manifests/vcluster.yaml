@@ -1,0 +1,16 @@
+controlPlane:
+  backingStore:
+    etcd:
+      embedded:
+        enabled: true
+  distro:
+    k8s:
+      image:
+        tag: v1.33.4
+
+privateNodes:
+  enabled: true
+  vpn:
+    enabled: true
+    nodeToNode:
+      enabled: true

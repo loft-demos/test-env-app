@@ -1,0 +1,18 @@
+apiVersion: management.loft.sh/v1
+kind: VirtualClusterInstance
+metadata:
+  name: private-node-demo
+  namespace: p-default
+spec:
+  displayName: Private Node Demo vCluster
+  owner:
+    team: loft-admins
+  templateRef:
+    name: private-node-demo-template
+    version: 1.0.x
+  accessPoint:
+    ingress: {}
+  clusterRef:
+    cluster: loft-cluster
+  parameters: |
+    kubernetesVersion: v1.33.4

@@ -1,0 +1,85 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: pr-app-multi-k8s
+  namespace: argocd
+spec:
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  generators:
+    - matrix:
+        generators:
+          - pullRequest:
+              github:
+                appSecretName: loft-demo-org-cred
+                labels:
+                  - 'deploy/argocd-vcluster-preview'
+                owner: {REPLACE_ORG_NAME}
+                repo: {REPLACE_REPO_NAME}
+              requeueAfterSeconds: 30
+          - clusters:
+              selector:
+                matchExpressions:
+                  - key: prNumber
+                    operator: In
+                    values:
+                      - '{{number}}'
+                matchLabels:
+                  prLabel: deploy-argocd-vcluster-preview
+                  repo: {REPLACE_REPO_NAME}
+  template:
+    metadata:
+      annotations:
+        notifications.argoproj.io/subscribe.github: ""
+        notifications.argoproj.io/subscribe.on-deployed.github: ""
+      labels:
+        vclusterName: '{{metadata.labels.vclusterName}}'
+        vclusterProjectId: '{{metadata.labels.vclusterProjectId}}'
+        shortSha: '{{head_short_sha}}'
+        k8sVersion: '{{metadata.labels.k8sVersion}}'
+      name: pr-{{number}}-app-k8s-{{metadata.labels.k8sVersionDNSLabel}}
+    spec:
+      destination:
+        namespace: preview-hello-world-app
+        name: '{{name}}'
+      info:
+        - name: Git Repo
+          value: '{REPLACE_GIT_PUBLIC_URL}/{REPLACE_ORG_NAME}/{{metadata.labels.repo}}/'
+      project: loft-auth-core
+      source:
+        helm:
+          parameters:
+            - name: image.repository
+              value: '{REPLACE_IMAGE_REPOSITORY_PREFIX}/{{metadata.labels.repo}}-demo-app'
+            - name: image.tag
+              value: '{{head_short_sha}}'
+            - name: image.args.text
+              value: >-
+                Hello from {{metadata.labels.vclusterName}} commit
+                {{head_short_sha}}
+            - name: ingress.hosts[0].host
+              value: '{{metadata.labels.vclusterName}}.{REPLACE_BASE_DOMAIN}'
+            - name: ingress.hosts[0].paths[0].backend.service.name
+              value: '{{metadata.labels.repo}}'
+            - name: ingress.hosts[0].paths[0].backend.service.port.name
+              value: http
+            - name: ingress.hosts[0].paths[0].path
+              value: /
+            - name: ingress.hosts[0].paths[0].pathType
+              value: prefix
+            - name: ingress.tls[0].hosts[0]
+              value: '{{metadata.labels.vclusterName}}.{REPLACE_BASE_DOMAIN}'
+        path: helm-chart/
+        repoURL: '{REPLACE_GIT_BASE_URL}/{REPLACE_ORG_NAME}/{{metadata.labels.repo}}.git'
+        targetRevision: '{{head_sha}}'
+      syncPolicy:
+        automated:
+          selfHeal: true
+        retry:
+          backoff:
+            duration: 40s
+            factor: 1
+            maxDuration: 2m
+          limit: 5
+        syncOptions:
+          - CreateNamespace=true

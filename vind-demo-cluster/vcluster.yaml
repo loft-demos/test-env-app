@@ -1,0 +1,233 @@
+# Use vCluster CLI 0.33.0 or newer when creating or upgrading this vind cluster.
+# The vCluster version is determined by the CLI release, while this file pins
+# the Kubernetes distro and the bootstrap add-on chart versions.
+# Treat this file as a template. Use install-vind.sh or
+# bootstrap-self-contained.sh to render the placeholders before creating vind.
+# The install helper renders the placeholders below:
+# - __VCP_PLATFORM_VERSION__
+# - __VCP_LICENSE_TOKEN__
+# - __VCP_LOFT_HOST__
+# - __VCP_DOMAIN_PREFIX__
+# - __VCP_DOMAIN__
+# - __ORG_NAME__
+# - __REPO_NAME__
+# - __VCLUSTER_NAME__
+# - __FORGEJO_HOST__
+# - __FORGEJO_ADMIN_USER__
+# - __FORGEJO_ADMIN_PASSWORD__
+# - optional `experimental.docker.args`
+# - worker node list for `experimental.docker.nodes`
+controlPlane:
+  backingStore:
+    etcd:
+      embedded:
+        enabled: true
+  distro:
+    k8s:
+      image:
+        tag: v1.35.1
+
+experimental:
+  docker:
+    # vind currently has no supported per-cluster disk-size setting.
+    # The Docker driver docs say storage uses Docker volumes, and the live
+    # control-plane/worker containers always mount named Docker volumes for
+    # /var, /etc, /usr/local/bin, and /opt/cni/bin.
+    #
+    # A low-level workaround may be possible with experimental.docker.args
+    # because those values are passed through to docker run, but that is not a
+    # documented vind feature and may not affect the named volumes that back
+    # the node filesystems.
+__VIND_DOCKER_ARGS__
+    nodes:
+__VIND_DOCKER_NODES__
+  deploy:
+    vcluster:
+      manifests: |-
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: argocd
+        ---
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: eso
+        ---
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: vcluster-platform
+        ---
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: crossplane-system
+        ---
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: ingress-nginx
+        ---
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: forgejo
+        ---
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: forgejo-admin-secret
+          namespace: forgejo
+        type: Opaque
+        stringData:
+          username: __FORGEJO_ADMIN_USER__
+          password: __FORGEJO_ADMIN_PASSWORD__
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: forgejo-local-http
+          namespace: forgejo
+        spec:
+          type: ClusterIP
+          selector:
+            app.kubernetes.io/instance: forgejo
+            app.kubernetes.io/name: forgejo
+          ports:
+            - name: http
+              port: 80
+              protocol: TCP
+              targetPort: http
+        ---
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: cluster-local
+          namespace: argocd
+          annotations:
+            domainPrefix: __VCP_DOMAIN_PREFIX__
+            domain: __VCP_DOMAIN__
+          labels:
+            argocd.argoproj.io/secret-type: cluster
+            loftDemoDomain: __VCP_LOFT_HOST__
+            domainPrefix: __VCP_DOMAIN_PREFIX__
+            domain: __VCP_DOMAIN__
+__CLUSTER_LOCAL_USE_CASE_LABELS__
+        type: Opaque
+        stringData:
+          config: '{"tlsClientConfig":{"insecure":false}}'
+          name: in-cluster
+          server: https://kubernetes.default.svc
+      helm:
+        - chart:
+            name: forgejo
+            repo: oci://code.forgejo.org/forgejo-helm
+            version: 16.0.2
+          release:
+            name: forgejo
+            namespace: forgejo
+          timeout: 15m
+          values: |-
+            strategy:
+              type: Recreate
+            persistence:
+              enabled: true
+              size: 20Gi
+            resources:
+              requests:
+                cpu: 250m
+                memory: 512Mi
+              limits:
+                cpu: "1"
+                memory: 1Gi
+            tolerations:
+              - key: node-role.kubernetes.io/control-plane
+                operator: Exists
+                effect: NoSchedule
+            service:
+              http:
+                type: LoadBalancer
+            ingress:
+              enabled: false
+            gitea:
+              admin:
+                existingSecret: forgejo-admin-secret
+                email: demo-admin@__VCP_LOFT_HOST__
+              config:
+                database:
+                  DB_TYPE: sqlite3
+                  SQLITE_TIMEOUT: 120000
+                  SQLITE_JOURNAL_MODE: WAL
+                packages:
+                  ENABLED: true
+                service:
+                  DISABLE_REGISTRATION: true
+                ui.notification:
+                  MIN_TIMEOUT: -1
+                  EVENT_SOURCE_UPDATE_TIME: -1
+                webhook:
+                  ALLOWED_HOST_LIST: external,private,loopback
+                actions:
+                  ENABLED: true
+                server:
+                  DOMAIN: __FORGEJO_HOST__
+                  ROOT_URL: http://__FORGEJO_HOST__/
+                  SSH_DOMAIN: __FORGEJO_HOST__
+        - chart:
+            name: argo-cd
+            repo: https://argoproj.github.io/argo-helm
+            version: 9.4.7
+          release:
+            name: argocd
+            namespace: argocd
+          timeout: 10m
+          values: |-
+            crds:
+              install: true
+            global:
+              image:
+                tag: v3.4.0-rc1
+            configs:
+              cm:
+                application.resourceTrackingMethod: annotation
+                kustomize.buildOptions: --load-restrictor LoadRestrictionsNone
+              params:
+                server.insecure: true
+            server:
+              extraArgs:
+                - --insecure
+              ingress:
+                enabled: false
+              service:
+                type: LoadBalancer
+        - chart:
+            name: external-secrets
+            repo: https://charts.external-secrets.io
+            version: 2.1.0
+          release:
+            name: eso
+            namespace: eso
+          timeout: 10m
+          values: |-
+            installCRDs: true
+        - chart:
+            name: ingress-nginx
+            repo: https://kubernetes.github.io/ingress-nginx
+            version: 4.12.1
+          release:
+            name: ingress-nginx
+            namespace: ingress-nginx
+          timeout: 10m
+          values: |-
+            controller:
+              ingressClassResource:
+                name: nginx
+                enabled: true
+                default: true
+              ingressClass: nginx
+              watchIngressWithoutClass: false
+              service:
+                type: LoadBalancer
+              admissionWebhooks:
+                enabled: false
